@@ -46,15 +46,15 @@ function compatibilityCheck {
 function installation {
     clear
     echo "Welcome to the WireGuard Installer!"
-    echo "The git repository is available at: https://github.com/angristan/wireguard-install"
+    echo "Source code is available at GitHub: https://github.com/angristan/wireguard-install"
     echo ""
 
     echo "I need to ask you a few questions before starting the setup."
-    echo "You can leave the default options and just press enter if you are ok with them."
+    echo "You can leave the default options and just press enter if you are OK with them."
+
     echo ""
     echo "I need to know the IPv4 address of the network interface you want WireGuard listening to."
     echo "Unless your server is behind NAT, it should be your public IPv4 address."
-
     # Check if server has the IPv6 address
     if [[ $(curl -s https://api6.ipify.org) =~ .*:.* ]]; then
         SERVER_PUB_IPV4=$(curl -s https://api.ipify.org)
@@ -64,7 +64,7 @@ function installation {
         echo "   1) IPv4: ${SERVER_PUB_IPV4}"
         echo "   2) IPv6: ${SERVER_PUB_IPV6}"
         until [[ "$IP_CHOICE" =~ ^[1-2]$ ]]; do
-            read -rp "Public IP choice [1-2]: " -e -i 1 IP_CHOICE
+            read -rp "Please choose the right option [1-2]: " -e -i 1 IP_CHOICE
         done
         case $IP_CHOICE in
             1) SERVER_PUB_IP=${SERVER_PUB_IPV4};;
@@ -81,12 +81,12 @@ function installation {
     echo "   1) Default: ${SERVER_PUB_NIC}"
     echo "   2) Custom"
     until [[ "$PUB_NIC_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Public interface [1-2]: " -e -i 1 PUB_NIC_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 PUB_NIC_CHOICE
     done
     case $PUB_NIC_CHOICE in
         1) ;;
         2)
-            read -rp "Custom public interface: " -e -i ${SERVER_PUB_NIC} SERVER_PUB_NIC
+            read -rp "Public interface: " -e -i ${SERVER_PUB_NIC} SERVER_PUB_NIC
         ;;
     esac
 
@@ -96,12 +96,12 @@ function installation {
     echo "   1) Default: ${SERVER_WG_NIC}"
     echo "   2) Custom"
     until [[ "$WG_NIC_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "WireGuard interface name choice [1-2]: " -e -i 1 WG_NIC_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 WG_NIC_CHOICE
     done
     case $WG_NIC_CHOICE in
         1) ;;
         2)
-            read -rp "Custom WireGuard interface name: " -e -i ${SERVER_WG_NIC} SERVER_WG_NIC
+            read -rp "WireGuard interface name: " -e -i ${SERVER_WG_NIC} SERVER_WG_NIC
         ;;
     esac
 
@@ -110,7 +110,7 @@ function installation {
     echo "   1) Default: yes"
     echo "   2) No"
     until [[ "$WG_USE_SYMMETRIC_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Use symmetric key mode choice [1-2]: " -e -i 1 WG_USE_SYMMETRIC_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 WG_USE_SYMMETRIC_CHOICE
     done
     case $WG_USE_SYMMETRIC_CHOICE in
         1) SERVER_WG_SYMMETRIC_KEY="Yes";;
@@ -123,12 +123,12 @@ function installation {
     echo "   1) Default: ${SERVER_WG_IPV4}"
     echo "   2) Custom"
     until [[ "$SERVER_WG_IPV4_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Server's WireGuard private IPv4 address [1-2]: " -e -i 1 SERVER_WG_IPV4_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 SERVER_WG_IPV4_CHOICE
     done
     case $SERVER_WG_IPV4_CHOICE in
         1) ;;
         2)
-            read -rp "Custom server's WireGuard private IPv4 address: " -e -i ${SERVER_WG_IPV4} SERVER_WG_IPV4
+            read -rp "WireGuard server private IPv4 address: " -e -i ${SERVER_WG_IPV4} SERVER_WG_IPV4
         ;;
     esac
 
@@ -138,12 +138,12 @@ function installation {
     echo "   1) Default: ${SERVER_WG_IPV6}"
     echo "   2) Custom"
     until [[ "$SERVER_WG_IPV6_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Server's WireGuard private IPv6 address [1-2]: " -e -i 1 SERVER_WG_IPV6_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 SERVER_WG_IPV6_CHOICE
     done
     case $SERVER_WG_IPV6_CHOICE in
         1) ;;
         2)
-            read -rp "Custom server's WireGuard private IPv6 address: " -e -i ${SERVER_WG_IPV6} SERVER_WG_IPV6
+            read -rp "WireGuard server private IPv6 address: " -e -i ${SERVER_WG_IPV6} SERVER_WG_IPV6
         ;;
     esac
 
@@ -154,19 +154,19 @@ function installation {
     echo "   2) Custom"
     echo "   3) Random [49152-65535]"
     until [[ "$PORT_CHOICE" =~ ^[1-3]$ ]]; do
-        read -rp "WireGuard port [1-3]: " -e -i 1 PORT_CHOICE
+        read -rp "Please choose the right option [1-3]: " -e -i 1 PORT_CHOICE
     done
     case $PORT_CHOICE in
         1) ;;
         2)
             until [[ "$SERVER_PORT" =~ ^[0-9]+$ ]] && [ "$SERVER_PORT" -ge 1 ] && [ "$SERVER_PORT" -le 65535 ]; do
-                read -rp "Custom WireGuard port [1-65535]: " -e -i ${SERVER_PORT} SERVER_PORT
+                read -rp "WireGuard port [1-65535]: " -e -i ${SERVER_PORT} SERVER_PORT
             done
         ;;
         3)
             # Generate random number within private ports range
             SERVER_PORT=$(shuf -i49152-65535 -n1)
-            echo "Random WireGuard port: $SERVER_PORT"
+            echo "WireGuard port: $SERVER_PORT"
         ;;
     esac
 
@@ -176,12 +176,12 @@ function installation {
     echo "   1) Default: ${CLIENT_WG_IPV4}"
     echo "   2) Custom"
     until [[ "$CLIENT_WG_IPV4_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Client's WireGuard private IPv4 address [1-2]: " -e -i 1 CLIENT_WG_IPV4_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 CLIENT_WG_IPV4_CHOICE
     done
     case $CLIENT_WG_IPV4_CHOICE in
         1) ;;
         2)
-            read -rp "Custom client's WireGuard private IPv4 address: " -e -i ${CLIENT_WG_IPV4} CLIENT_WG_IPV4
+            read -rp "WireGuard client private IPv4 address: " -e -i ${CLIENT_WG_IPV4} CLIENT_WG_IPV4
         ;;
     esac
 
@@ -191,12 +191,12 @@ function installation {
     echo "   1) Default: ${CLIENT_WG_IPV6}"
     echo "   2) Custom"
     until [[ "$CLIENT_WG_IPV6_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Client's WireGuard private IPv6 address [1-2]: " -e -i 1 CLIENT_WG_IPV6_CHOICE
+        read -rp "Please choose the right option [1-2]: " -e -i 1 CLIENT_WG_IPV6_CHOICE
     done
     case $CLIENT_WG_IPV6_CHOICE in
         1) ;;
         2)
-            read -rp "Custom client's WireGuard private IPv6 address: " -e -i ${CLIENT_WG_IPV6} CLIENT_WG_IPV6
+            read -rp "WireGuard client private IPv6 address: " -e -i ${CLIENT_WG_IPV6} CLIENT_WG_IPV6
         ;;
     esac
 
@@ -214,7 +214,7 @@ function installation {
     echo "   10) AdGuard DNS (Russia)"
     echo "   11) Custom"
     until [[ "$DNS_CHOICE" =~ ^[0-9]+$ ]] && [ "$DNS_CHOICE" -ge 1 ] && [ "$DNS_CHOICE" -le 11 ]; do
-        read -rp "DNS [1-11]: " -e -i 2 DNS_CHOICE
+        read -rp "Please choose the right option [1-11]: " -e -i 2 DNS_CHOICE
     done
     case $DNS_CHOICE in
         1)
