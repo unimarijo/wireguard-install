@@ -105,6 +105,18 @@ function installation {
         ;;
     esac
 
+    echo ""
+    echo "Do you want to use symmetric key mode?"
+    echo "   1) Default: yes"
+    echo "   2) No"
+    until [[ "$WG_USE_SYMMETRIC_CHOICE" =~ ^[1-2]$ ]]; do
+        read -rp "Use symmetric key mode choice [1-2]: " -e -i 1 WG_USE_SYMMETRIC_CHOICE
+    done
+    case $WG_USE_SYMMETRIC_CHOICE in
+        1) SERVER_WG_SYMMETRIC_KEY="Yes";;
+        2) SERVER_WG_SYMMETRIC_KEY="No";;
+    esac
+
     SERVER_WG_IPV4="10.38.72.1"
     echo ""
     echo "What private IPv4 address for WireGuard server do you want to use?"
@@ -324,6 +336,12 @@ DNS = $CLIENT_DNS_1, $CLIENT_DNS_2" > "$HOME/$SERVER_WG_NIC-wg-client.conf"
 PublicKey = $SERVER_PUB_KEY
 Endpoint = $ENDPOINT
 AllowedIPs = 0.0.0.0/0, ::/0" >> "$HOME/$SERVER_WG_NIC-wg-client.conf"
+
+    if [ "$SERVER_WG_SYMMETRIC_KEY" == "Yes" ]; then
+        SERVER_WG_SYMMETRIC_KEY=$(wg genpsk)
+        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "/etc/wireguard/$SERVER_WG_NIC.conf"
+        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "$HOME/$SERVER_WG_NIC-wg-client.conf"
+    fi
 
     chmod 600 -R /etc/wireguard/
 
