@@ -105,18 +105,6 @@ function installation {
         ;;
     esac
 
-    echo ""
-    echo "Do you want to use symmetric key mode?"
-    echo "   1) Default: yes"
-    echo "   2) No"
-    until [[ "$WG_USE_SYMMETRIC_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Please choose the right option [1-2]: " -e -i 1 WG_USE_SYMMETRIC_CHOICE
-    done
-    case $WG_USE_SYMMETRIC_CHOICE in
-        1) SERVER_WG_SYMMETRIC_KEY="Yes";;
-        2) SERVER_WG_SYMMETRIC_KEY="No";;
-    esac
-
     SERVER_WG_IPV4="10.38.72.1"
     echo ""
     echo "What private IPv4 address for WireGuard server do you want to use?"
@@ -164,109 +152,6 @@ function installation {
         ;;
     esac
 
-    CLIENT_WG_IPV4="10.38.72.2"
-    echo ""
-    echo "What private IPv4 address for WireGuard client do you want to use?"
-    echo "   1) Default: ${CLIENT_WG_IPV4}"
-    echo "   2) Custom"
-    until [[ "$CLIENT_WG_IPV4_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Please choose the right option [1-2]: " -e -i 1 CLIENT_WG_IPV4_CHOICE
-    done
-    case $CLIENT_WG_IPV4_CHOICE in
-        1) ;;
-        2)
-            read -rp "WireGuard client private IPv4 address: " -e -i ${CLIENT_WG_IPV4} CLIENT_WG_IPV4
-        ;;
-    esac
-
-    CLIENT_WG_IPV6="fd18:56:42::2"
-    echo ""
-    echo "What private IPv6 address for WireGuard client do you want to use?"
-    echo "   1) Default: ${CLIENT_WG_IPV6}"
-    echo "   2) Custom"
-    until [[ "$CLIENT_WG_IPV6_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Please choose the right option [1-2]: " -e -i 1 CLIENT_WG_IPV6_CHOICE
-    done
-    case $CLIENT_WG_IPV6_CHOICE in
-        1) ;;
-        2)
-            read -rp "WireGuard client private IPv6 address: " -e -i ${CLIENT_WG_IPV6} CLIENT_WG_IPV6
-        ;;
-    esac
-
-    echo ""
-    echo "What DNS resolvers do you want to use for WireGuard client?"
-    echo "   1) Current system resolvers (from /etc/resolv.conf)"
-    echo "   2) Cloudflare (Anycast: worldwide)"
-    echo "   3) Quad9 (Anycast: worldwide)"
-    echo "   4) Quad9 uncensored (Anycast: worldwide)"
-    echo "   5) FDN (France)"
-    echo "   6) DNS.WATCH (Germany)"
-    echo "   7) OpenDNS (Anycast: worldwide)"
-    echo "   8) Google (Anycast: worldwide)"
-    echo "   9) Yandex Basic (Russia)"
-    echo "   10) AdGuard DNS (Russia)"
-    echo "   11) Custom"
-    until [[ "$DNS_CHOICE" =~ ^[0-9]+$ ]] && [ "$DNS_CHOICE" -ge 1 ] && [ "$DNS_CHOICE" -le 11 ]; do
-        read -rp "Please choose the right option [1-11]: " -e -i 2 DNS_CHOICE
-    done
-    case $DNS_CHOICE in
-        1)
-            # Locate the proper resolv.conf
-            # Needed for systems running systemd-resolved
-            if grep -q "127.0.0.53" "/etc/resolv.conf"; then
-                RESOLVCONF='/run/systemd/resolve/resolv.conf'
-            else
-                RESOLVCONF='/etc/resolv.conf'
-            fi
-            # Obtain the resolvers from resolv.conf and use them for OpenVPN
-            grep -v '#' $RESOLVCONF | grep 'nameserver' | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | while read -r line; do
-                CLIENT_DNS_1=${line}
-                CLIENT_DNS_2=${line}
-            done
-        ;;
-        2) # Cloudflare
-            CLIENT_DNS_1="1.1.1.1"
-            CLIENT_DNS_2="1.0.0.1"
-        ;;
-        3) # Quad9
-            CLIENT_DNS_1="9.9.9.9"
-            CLIENT_DNS_2="149.112.112.112"
-        ;;
-        4) # Quad9 uncensored
-            CLIENT_DNS_1="9.9.9.10"
-            CLIENT_DNS_2="149.112.112.10"
-        ;;
-        5) # FDN
-            CLIENT_DNS_1="80.67.169.40"
-            CLIENT_DNS_2="80.67.169.12"
-        ;;
-        6) # DNS.WATCH
-            CLIENT_DNS_1="84.200.69.80"
-            CLIENT_DNS_2="84.200.70.40"
-        ;;
-        7) # OpenDNS
-            CLIENT_DNS_1="208.67.222.222"
-            CLIENT_DNS_2="208.67.220.220"
-        ;;
-        8) # Google
-            CLIENT_DNS_1="8.8.8.8"
-            CLIENT_DNS_2="8.8.4.4"
-        ;;
-        9) # Yandex Basic
-            CLIENT_DNS_1="77.88.8.8"
-            CLIENT_DNS_2="77.88.8.1"
-        ;;
-        10) # AdGuard DNS
-            CLIENT_DNS_1="176.103.130.130"
-            CLIENT_DNS_2="176.103.130.131"
-        ;;
-        11) # Custom
-            read -rp "Primary DNS server: " -e -i "1.1.1.1" CLIENT_DNS_1
-            read -rp "Secondary DNS server: " -e -i "1.0.0.1" CLIENT_DNS_2
-        ;;
-    esac
-
     # Check if selected public IP is IPv6 or not
     if [[ ${SERVER_PUB_IP} =~ .*:.* ]]; then
         ENDPOINT="[$SERVER_PUB_IP]:$SERVER_PORT"
@@ -302,40 +187,16 @@ function installation {
     SERVER_PRIV_KEY=$(wg genkey)
     SERVER_PUB_KEY=$(echo "$SERVER_PRIV_KEY" | wg pubkey)
 
-    # Generate key pair for the server
-    CLIENT_PRIV_KEY=$(wg genkey)
-    CLIENT_PUB_KEY=$(echo "$CLIENT_PRIV_KEY" | wg pubkey)
-
     # Add server interface
-    printf "# Server data: {\"PUBLIC_KEY\": \"$SERVER_PUB_KEY\", \"PUBLIC_IP\": \"$ENDPOINT\"}\n\n[Interface]
+    printf "# Server data: {\"PUBLIC_KEY\": \"$SERVER_PUB_KEY\", \"ENDPOINT\": \"$ENDPOINT\"}\n\n[Interface]
 Address = $SERVER_WG_IPV4/24, $SERVER_WG_IPV6/64
 ListenPort = $SERVER_PORT
 PrivateKey = $SERVER_PRIV_KEY
 PostUp = iptables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE
 PostDown = iptables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE" > "/etc/wireguard/$SERVER_WG_NIC.conf"
 
-    # Add the client as a peer to the server
-    printf "\n\n[Peer]
-PublicKey = $CLIENT_PUB_KEY
-AllowedIPs = $CLIENT_WG_IPV4/32, $CLIENT_WG_IPV6/128" >> "/etc/wireguard/$SERVER_WG_NIC.conf"
-
-    # Create client file with interface
-    printf "[Interface]
-PrivateKey = $CLIENT_PRIV_KEY
-Address = $CLIENT_WG_IPV4/24, $CLIENT_WG_IPV6/64
-DNS = $CLIENT_DNS_1, $CLIENT_DNS_2" > "$HOME/$SERVER_WG_NIC-wg.conf"
-
-    # Add the server as a peer to the client
-    printf "\n\n[Peer]
-PublicKey = $SERVER_PUB_KEY
-Endpoint = $ENDPOINT
-AllowedIPs = 0.0.0.0/0, ::/0" >> "$HOME/$SERVER_WG_NIC-wg.conf"
-
-    if [ "$SERVER_WG_SYMMETRIC_KEY" == "Yes" ]; then
-        SERVER_WG_SYMMETRIC_KEY=$(wg genpsk)
-        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "/etc/wireguard/$SERVER_WG_NIC.conf"
-        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "$HOME/$SERVER_WG_NIC-wg.conf"
-    fi
+    # Prompt user to add a client
+    addClient
 
     chmod 600 -R /etc/wireguard/
 
@@ -383,22 +244,18 @@ function uninstallation {
 }
 
 function addClient {
-    clear
-    echo "I need to ask you a few questions before starting the setup."
-    echo "You can leave the default options and just press enter if you are OK with them."
-
-    SERVER_WG_NIC="wg0"
+    CLIENT_SERVER_WG_NIC="wg0"
     echo ""
     echo "To what WireGuard interface do you want to add a new client?"
-    echo "   1) Default: ${SERVER_WG_NIC}"
+    echo "   1) Default: ${CLIENT_SERVER_WG_NIC}"
     echo "   2) Custom"
-    until [[ "$WG_NIC_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Please choose the right option [1-2]: " -e -i 1 WG_NIC_CHOICE
+    until [[ "$CLIENT_WG_NIC_CHOICE" =~ ^[1-2]$ ]]; do
+        read -rp "Please choose the right option [1-2]: " -e -i 1 CLIENT_WG_NIC_CHOICE
     done
-    case $WG_NIC_CHOICE in
+    case $CLIENT_WG_NIC_CHOICE in
         1) ;;
         2)
-            read -rp "WireGuard interface name: " -e -i ${SERVER_WG_NIC} SERVER_WG_NIC
+            read -rp "WireGuard interface name: " -e -i ${CLIENT_SERVER_WG_NIC} CLIENT_SERVER_WG_NIC
         ;;
     esac
 
@@ -535,16 +392,16 @@ function addClient {
     SERVER_PUB_KEY=$(python3 -c "import json; SERVER_DATA = json.loads(open('/etc/wireguard/wg0.conf').readlines()[0]. \
     strip('# Server data: ').rstrip('\n')); print(SERVER_DATA['PUBLIC_KEY'])")
     ENDPOINT=$(python3 -c "import json; SERVER_DATA = json.loads(open('/etc/wireguard/wg0.conf').readlines()[0]. \
-    strip('# Server data: ').rstrip('\n')); print(SERVER_DATA['PUBLIC_IP'])")
+    strip('# Server data: ').rstrip('\n')); print(SERVER_DATA['ENDPOINT'])")
 
-    # Generate key pair for the server
+    # Generate key pair for a new client
     CLIENT_PRIV_KEY=$(wg genkey)
     CLIENT_PUB_KEY=$(echo "$CLIENT_PRIV_KEY" | wg pubkey)
 
     # Add the client as a peer to the server
     printf "\n\n# Client's name: $CLIENT_NAME\n[Peer]
 PublicKey = $CLIENT_PUB_KEY
-AllowedIPs = $CLIENT_WG_IPV4/32, $CLIENT_WG_IPV6/128" >> "/etc/wireguard/$SERVER_WG_NIC.conf"
+AllowedIPs = $CLIENT_WG_IPV4/32, $CLIENT_WG_IPV6/128" >> "/etc/wireguard/$CLIENT_SERVER_WG_NIC.conf"
 
     # Create client file with interface
     printf "[Interface]
@@ -560,7 +417,7 @@ AllowedIPs = 0.0.0.0/0, ::/0" >> "$HOME/$CLIENT_NAME-wg.conf"
 
     if [ "$SERVER_WG_SYMMETRIC_KEY" == "Yes" ]; then
         SERVER_WG_SYMMETRIC_KEY=$(wg genpsk)
-        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "/etc/wireguard/$SERVER_WG_NIC.conf"
+        printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "/etc/wireguard/$CLIENT_SERVER_WG_NIC.conf"
         printf "\nPresharedKey = $SERVER_WG_SYMMETRIC_KEY" >> "$HOME/$CLIENT_NAME-wg.conf"
     fi
 }
