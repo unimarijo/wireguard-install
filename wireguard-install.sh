@@ -86,7 +86,7 @@ function installation {
     case $PUB_NIC_CHOICE in
         1) ;;
         2)
-            read -rp "Public interface: " -e -i ${SERVER_PUB_NIC} SERVER_PUB_NIC
+            read -rp "Public interface: " -e -i "${SERVER_PUB_NIC}" SERVER_PUB_NIC
         ;;
     esac
 
@@ -270,7 +270,7 @@ function addClient {
     case $CLIENT_NAME_CHOICE in
         1) ;;
         2)
-            read -rp "A new client's name: " -e -i ${CLIENT_NAME} CLIENT_NAME
+            read -rp "A new client's name: " -e -i "${CLIENT_NAME}" CLIENT_NAME
         ;;
     esac
 
