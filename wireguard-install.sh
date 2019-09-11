@@ -9,6 +9,7 @@ function isRoot {
 
 function checkOS {
     if [[ -e /etc/debian_version ]]; then
+        # shellcheck disable=SC1091
         source /etc/os-release
         OS=$ID # debian or ubuntu
     elif [[ -e /etc/fedora-release ]]; then
@@ -163,21 +164,24 @@ function installation {
     if [[ "$OS" = "ubuntu" ]]; then
         add-apt-repository -y ppa:wireguard/wireguard
         apt-get update
-        apt-get install -y wireguard
+        apt-get install "linux-headers-$(uname -r)"
+        apt-get install -y wireguard iptables
     elif [[ "$OS" = "debian" ]]; then
         echo "deb http://deb.debian.org/debian/ unstable main" > /etc/apt/sources.list.d/unstable.list
         printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/preferences.d/limit-unstable
-        apt update -y
-        apt install -y wireguard
+        apt-get update -y
+        apt-get install "linux-headers-$(uname -r)"
+        apt-get install -y wireguard iptables
     elif [[ "$OS" = "fedora" ]]; then
         dnf copr enable jdoss/wireguard
-        dnf install -y wireguard-dkms wireguard-tools
+        dnf install -y wireguard-dkms wireguard-tools iptables
     elif [[ "$OS" = "centos" ]]; then
         curl -Lo /etc/yum.repos.d/wireguard.repo https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
         yum install -y epel-release
-        yum install -y wireguard-dkms wireguard-tools
+        yum install -y wireguard-dkms wireguard-tools iptables
     elif [[ "$OS" = "arch" ]]; then
-        pacman --noconfirm -S wireguard-tools
+        pacman -S linux-headers
+        pacman --noconfirm -S wireguard-tools wireguard-arch iptables
     fi
 
     # Make sure the directory exists (this does not seem the be the case on fedora)
@@ -192,8 +196,8 @@ function installation {
 Address = $SERVER_WG_IPV4/24, $SERVER_WG_IPV6/64
 ListenPort = $SERVER_PORT
 PrivateKey = $SERVER_PRIV_KEY
-PostUp = iptables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE
-PostDown = iptables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE" > "/etc/wireguard/$SERVER_WG_NIC.conf"
+PostUp = iptables -A FORWARD -i $SERVER_WG_NIC -j ACCEPT; iptables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -A FORWARD -i $SERVER_WG_NIC -j ACCEPT; ip6tables -t nat -A POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE
+PostDown = iptables -D FORWARD -i $SERVER_WG_NIC -j ACCEPT; iptables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE; ip6tables -D FORWARD -i $SERVER_WG_NIC -j ACCEPT; ip6tables -t nat -D POSTROUTING -o $SERVER_PUB_NIC -j MASQUERADE" > "/etc/wireguard/$SERVER_WG_NIC.conf"
 
     # Prompt user to add a client
     addClient
